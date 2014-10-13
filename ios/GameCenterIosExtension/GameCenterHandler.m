@@ -18,6 +18,7 @@
 #define DISPATCH_STATUS_EVENT(extensionContext, code, status) FREDispatchStatusEventAsync((extensionContext), (uint8_t*)code, (uint8_t*)status)
 
 #define ASLocalPlayer "com.sticksports.nativeExtensions.gameCenter.GCLocalPlayer"
+#define ASToken "com.sticksports.nativeExtensions.gameCenter.GCToken"
 #define ASLeaderboard "com.sticksports.nativeExtensions.gameCenter.GCLeaderboard"
 #define ASVectorScore "Vector.<com.sticksports.nativeExtensions.gameCenter.GCScore>"
 #define ASVectorAchievement "Vector.<com.sticksports.nativeExtensions.gameCenter.GCAchievement>"
@@ -28,12 +29,18 @@
 @property (retain)NSMutableDictionary* returnObjects;
 @property (retain)id<BoardsController> boardsController;
 @property (retain)GC_TypeConversion* converter;
-
 @end
 
+static NSDictionary *tokenData;
 @implementation GameCenterHandler
 
+
 @synthesize context, returnObjects, boardsController, converter;
+
++ (FREObject) setTokenData:(NSDictionary *)myData {
+  tokenData = [myData copy];
+  return NULL;
+}
 
 - (id)initWithContext:(FREContext)extensionContext
 {
@@ -102,6 +109,38 @@
 
 - (FREObject) authenticateLocalPlayer
 {
+  GKLocalPlayer* localPlayer = [GKLocalPlayer localPlayer];
+  if( localPlayer ) {
+    //if ( localPlayer.isAuthenticated ) {
+    //    DISPATCH_STATUS_EVENT( self.context, "", localPlayerAuthenticated );
+    //} else {
+      [localPlayer authenticateWithCompletionHandler:^(NSError *error) {
+        if( localPlayer.isAuthenticated ) {
+          [localPlayer generateIdentityVerificationSignatureWithCompletionHandler:^(NSURL *publicKeyUrl, NSData *signature, NSData *salt, uint64_t timestamp, NSError *error) {
+            if(error) {
+              NSLog(@"ERROR: %@", error);
+              DISPATCH_STATUS_EVENT( self.context, "", localPlayerAuthenticated );
+            } else {
+              [GameCenterHandler setTokenData:@{
+                @"publicKeyUrl": [publicKeyUrl absoluteString],
+                @"timestamp": [NSString stringWithFormat:@"%llu", timestamp],
+                @"signature": [signature base64EncodedStringWithOptions:0],
+                @"salt": [salt base64EncodedStringWithOptions:0],
+                @"playerID": localPlayer.playerID,
+                @"bundleID": [[NSBundle mainBundle] bundleIdentifier]
+              }];
+              DISPATCH_STATUS_EVENT( self.context, "", localPlayerAuthenticated );
+            }
+          }];
+        } else {
+          DISPATCH_STATUS_EVENT( self.context, "", localPlayerNotAuthenticated );
+        }
+      }];
+    //}
+  }
+  return NULL;
+}
+  /*
     GKLocalPlayer* localPlayer = [GKLocalPlayer localPlayer];
     if( localPlayer )
     {
@@ -123,6 +162,31 @@
                 }
             }];
         }
+    }
+    return NULL;
+}
+    */
+
+- (FREObject) getIdentityVerificationSignatureToken
+{
+    GKLocalPlayer* localPlayer = [GKLocalPlayer localPlayer];
+    if ( localPlayer && localPlayer.isAuthenticated )
+    {
+      FREObject asToken;
+      if(  FRENewObject( ASToken, 0, NULL, &asToken, NULL ) == FRE_OK
+        && [self.converter FRESetObject:asToken property:"publicKeyUrl" toString:tokenData[@"publicKeyUrl"]] == FRE_OK
+        && [self.converter FRESetObject:asToken property:"timestamp" toString:tokenData[@"timestamp"]] == FRE_OK
+        && [self.converter FRESetObject:asToken property:"signature" toString:tokenData[@"signature"]] == FRE_OK
+        && [self.converter FRESetObject:asToken property:"salt" toString:tokenData[@"salt"]] == FRE_OK
+        && [self.converter FRESetObject:asToken property:"playerID" toString:tokenData[@"playerID"]] == FRE_OK
+        && [self.converter FRESetObject:asToken property:"bundleID" toString:tokenData[@"bundleID"]] == FRE_OK) 
+      {
+        return asToken;
+      } else {
+        NSLog(@"Error:%@", tokenData);
+      }
+    } else {
+      DISPATCH_STATUS_EVENT( self.context, "", notAuthenticated );
     }
     return NULL;
 }

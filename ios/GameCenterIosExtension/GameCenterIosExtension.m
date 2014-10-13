@@ -32,6 +32,11 @@ DEFINE_ANE_FUNCTION( GC_getLocalPlayer )
     return [GC_handler getLocalPlayer];
 }
 
+DEFINE_ANE_FUNCTION( GC_getIdentityVerificationSignatureToken )
+{
+    return [GC_handler getIdentityVerificationSignatureToken];
+}
+
 DEFINE_ANE_FUNCTION( GC_reportScore )
 {
     return [GC_handler reportScore:argv[1] inCategory:argv[0]];
@@ -113,6 +118,7 @@ void GameCenterContextInitializer( void* extData, const uint8_t* ctxType, FRECon
         MAP_FUNCTION( GC_isSupported, NULL ),
         MAP_FUNCTION( GC_authenticateLocalPlayer, NULL ),
         MAP_FUNCTION( GC_getLocalPlayer, NULL ),
+        MAP_FUNCTION( GC_getIdentityVerificationSignatureToken, NULL ),
         MAP_FUNCTION( GC_reportScore, NULL ),
         MAP_FUNCTION( GC_reportAchievement, NULL ),
         MAP_FUNCTION( GC_showStandardLeaderboard, NULL ),

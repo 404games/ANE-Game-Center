@@ -16,6 +16,7 @@
 - (id)initWithContext:(FREContext)extensionContext;
 - (FREObject) isSupported;
 - (FREObject) authenticateLocalPlayer;
+- (FREObject) getIdentityVerificationSignatureToken;
 - (FREObject) getLocalPlayer;
 - (FREObject) reportScore:(FREObject)asScore inCategory:(FREObject)asCategory;
 - (FREObject) showStandardLeaderboard;

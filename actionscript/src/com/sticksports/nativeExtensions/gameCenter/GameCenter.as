@@ -33,6 +33,7 @@ package com.sticksports.nativeExtensions.gameCenter
 		
 		private static var _localPlayer : GCLocalPlayer;
 		private static var _localPlayerTested : Boolean;
+		private static var _identityVerificationSignatureToken : GCToken;
 		
 		private static var extensionContext : ExtensionContext = null;
 		private static var initialised : Boolean = false;
@@ -217,6 +218,16 @@ package com.sticksports.nativeExtensions.gameCenter
 				_localPlayer = extensionContext.call( NativeMethods.getLocalPlayer ) as GCLocalPlayer;
 			}
 			return _localPlayer;
+		}
+
+		public static function get identityVerificationSignatureToken() : GCToken
+		{
+			assertIsAuthenticatedTested();
+			if( _isAuthenticated && !_localPlayerTested )
+			{
+				_identityVerificationSignatureToken = extensionContext.call( NativeMethods.getIdentityVerificationSignatureToken ) as GCToken;
+			}
+			return _identityVerificationSignatureToken;
 		}
 		
 		/**
